@@ -73,6 +73,20 @@ con tu cuenta. Puedes pedir, por ejemplo:
 - "Prepara con el redactor una carta para esta vacante: [enlace]"
 - "Explícame con el tutor cómo funciona la regla de experiencia"
 
+### Cómo están repartidos los modelos (para no gastar tu cupo de Claude)
+
+Cada agente usa el modelo justo para su tarea. Ya viene configurado:
+
+- Director (la sesión principal): Sonnet, definido en `.claude/settings.json`.
+- buscador: Haiku, el más barato, para el trabajo mecánico de recolectar.
+- revisor-vacantes, redactor y tutor-codigo: Sonnet, porque leen y escriben con criterio.
+- estratega: Opus, el más potente y el que más consume. Solo entra en decisiones
+  importantes y recibe resúmenes, no textos largos.
+
+Así no gastas Opus en tareas de rutina. Si quieres cambiar un modelo, edita la línea
+`model:` del archivo del agente en `.claude/agents/` (valores: haiku, sonnet, opus).
+El Radar en sí (`radar.py`) no usa Claude, así que no consume nada de tu plan.
+
 ## Reglas importantes
 
 - El Radar nunca postula por ti. Tú revisas y envías.
