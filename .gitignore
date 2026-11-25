@@ -1,6 +1,18 @@
 # Datos personales (nunca se suben)
 perfil.md
 
-# Configuración privada de Claude Code (notas personales y agentes)
+# Notas personales para Claude Code (la versión para compartir es CLAUDE.ejemplo.md)
 CLAUDE.md
-.claude/
+.claude/settings.local.json
+
+# Datos generados por el Radar (vacantes de Himalayas: no se redistribuyen)
+datos/
+informes/*
+!informes/ejemplo.md
+
+# Python
+__pycache__/
+*.pyc
+
+# Archivos para borrar a mano
+_to_delete/

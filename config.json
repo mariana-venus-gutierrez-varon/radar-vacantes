@@ -1,0 +1,89 @@
+{
+  "busquedas": [
+    "financial analyst",
+    "data analyst",
+    "automation"
+  ],
+  "pais": "Colombia",
+  "max_paginas_por_busqueda": 5,
+  "pausa_entre_pedidos_segundos": 1,
+  "max_anios_experiencia": 2,
+  "tipos_de_contrato_aceptados": [
+    "Full Time",
+    "Contractor"
+  ],
+  "seniority_excluida": [
+    "Senior",
+    "Manager",
+    "Director",
+    "Executive"
+  ],
+  "palabras_de_titulo_excluidas": [
+    "senior",
+    "sr.",
+    "sr",
+    "lead",
+    "head of",
+    "director",
+    "principal",
+    "vp",
+    "vice president",
+    "chief",
+    "manager"
+  ],
+  "certificaciones_que_no_tengo": [
+    "CPA",
+    "CFA",
+    "ACCA",
+    "CMA",
+    "PMP",
+    "CIA",
+    "FRM",
+    "AWS Certified",
+    "Google Cloud Certified"
+  ],
+  "zona_horaria_utc": -5,
+  "tolerancia_zona_horaria_horas": 3,
+  "palabras_de_titulo_fuera_de_perfil": [
+    "engineer",
+    "engineering",
+    "developer",
+    "scientist",
+    "devops",
+    "programmer",
+    "bioinformatics",
+    "medical",
+    "nurse",
+    "hardware",
+    "technician",
+    "attorney",
+    "lawyer"
+  ],
+  "idiomas_que_no_hablo": [
+    "dutch",
+    "polish",
+    "german",
+    "french",
+    "portuguese",
+    "japanese",
+    "korean",
+    "chinese",
+    "mandarin",
+    "russian",
+    "turkish",
+    "arabic",
+    "hindi",
+    "swedish",
+    "norwegian",
+    "danish",
+    "finnish",
+    "czech",
+    "hungarian",
+    "romanian",
+    "greek",
+    "hebrew",
+    "thai",
+    "vietnamese",
+    "indonesian"
+  ]
+}
