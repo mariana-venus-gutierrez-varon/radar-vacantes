@@ -97,6 +97,24 @@ class PruebasReglas(unittest.TestCase):
         v = vacante(description="<p>Mínimo 4 años de experiencia como analista.</p>" + RELLENO)
         self.assertEqual(self.motivo(v), "Pide 4+ años de experiencia")
 
+    def test_experiencia_minima_en_espanol(self):
+        # Caso real (Consultec-TI): "experiencia mínima de 3 años en ..." se colaba.
+        v = vacante(description="<p>Requisitos: experiencia mínima de 3 años en análisis de procesos.</p>" + RELLENO)
+        self.assertEqual(self.motivo(v), "Pide 3+ años de experiencia")
+
+    def test_titulo_con_letras_decoradas(self):
+        # Caso real: títulos con letras matemáticas en negrita esquivaban las reglas de título.
+        self.assertIn("nivel alto", self.motivo(vacante(title="𝗦𝗲𝗻𝗶𝗼𝗿 𝗔𝗻𝗮𝗹𝘆𝘀𝘁")))
+
+    def test_repetida_de_la_misma_empresa_deja_una(self):
+        # Caso real (Adaptive Teams): el mismo aviso dos veces. Debe quedar una, no cero.
+        a = vacante(guid="a", companyName="Misma Empresa")
+        b = vacante(guid="b", companyName="Misma Empresa")
+        pasan, descartadas = filtros.evaluar([a, b], CONFIG)
+        self.assertEqual([v["guid"] for v, _ in pasan], ["a"])
+        self.assertEqual([v["guid"] for v, _ in descartadas], ["b"])
+        self.assertIn("Repetida", descartadas[0][1])
+
     def test_certificacion_obligatoria(self):
         v = vacante(description="<p>CPA certification is required.</p>" + RELLENO)
         self.assertEqual(self.motivo(v), "Exige certificación CPA")

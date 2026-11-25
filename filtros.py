@@ -12,15 +12,30 @@ import hashlib
 import html
 import re
 import time
+import unicodedata
 
 # --- Utilidades ------------------------------------------------------------
+
+
+def normalizar(texto):
+    """Minúsculas y letras 'decoradas' convertidas a letras normales.
+
+    Algunos avisos escriben el título con letras matemáticas (𝗕𝗶𝗹𝗹𝗶𝗻𝗴). Para una
+    regla que busca 'a-z' eso es invisible y se salta los filtros. NFKC las
+    convierte a ASCII normal.
+    """
+    return unicodedata.normalize("NFKC", texto or "").lower()
+
+
+def titulo_normalizado(vacante):
+    return normalizar(vacante.get("title"))
 
 
 def texto_plano(vacante):
     """Convierte la descripción HTML en texto plano en minúsculas."""
     descripcion = vacante.get("description") or ""
     sin_etiquetas = re.sub(r"<[^>]+>", " ", descripcion)
-    return re.sub(r"\s+", " ", html.unescape(sin_etiquetas)).strip().lower()
+    return re.sub(r"\s+", " ", normalizar(html.unescape(sin_etiquetas))).strip()
 
 
 def nombres_de_paises(vacante):
@@ -47,6 +62,10 @@ def anios_exigidos(texto):
         r"(?<!\d)(\d{1,2})(?!\d)\s*\+?\s*(?:-|–|to|a)?\s*\d{0,2}\s*\+?\s*(?:years?|yrs?)\b[^.]{0,60}?experience",
         r"(?:minimum|at least|min\.?)\s*(?:of\s*)?(?<!\d)(\d{1,2})(?!\d)\s*\+?\s*(?:years?|yrs?)",
         r"(?<!\d)(\d{1,2})(?!\d)\s*\+?\s*(?:-|–|a)?\s*\d{0,2}\s*\+?\s*años\s*de\s*experiencia",
+        # "experiencia mínima de 3 años", "mínimo 3 años", "al menos 3 años"
+        r"(?:m[ií]nim[oa]s?|al menos|por lo menos)\s*(?:de\s*)?(?<!\d)(\d{1,2})(?!\d)\s*\+?\s*años",
+        # "experiencia de 3 años", "experiencia previa de 3 años"
+        r"experiencia\s*(?:previa\s*)?(?:de|mayor a)\s*(?<!\d)(\d{1,2})(?!\d)\s*\+?\s*años",
     ]
     encontrados = []
     for patron in patrones:
@@ -88,7 +107,7 @@ def regla_tipo_de_contrato(vacante, config):
     if tipo and tipo not in config["tipos_de_contrato_aceptados"]:
         return f"Tipo de contrato no buscado ({tipo})"
     # A veces la etiqueta dice Full Time pero el título dice medio tiempo.
-    titulo = (vacante.get("title") or "").lower()
+    titulo = titulo_normalizado(vacante)
     if re.search(r"part[- ]time|medio tiempo", titulo) and "Part Time" not in config["tipos_de_contrato_aceptados"]:
         return "Contradicción: etiqueta de tiempo completo pero el título dice medio tiempo"
     return None
@@ -138,7 +157,7 @@ def regla_seniority(vacante, config):
     niveles = vacante.get("seniority") or []
     if niveles and all(n in config["seniority_excluida"] for n in niveles):
         return f"Nivel demasiado alto ({', '.join(niveles)})"
-    titulo = (vacante.get("title") or "").lower()
+    titulo = titulo_normalizado(vacante)
     for palabra in config["palabras_de_titulo_excluidas"]:
         palabra = palabra.strip().lower()
         # Busca la palabra completa: 'vp' no debe coincidir dentro de 'vpn'.
@@ -154,7 +173,7 @@ def buscar_palabra(palabra, texto):
 
 def regla_fuera_de_perfil(vacante, config):
     """Puestos técnicos o de otras profesiones que no encajan con el perfil."""
-    titulo = (vacante.get("title") or "").lower()
+    titulo = titulo_normalizado(vacante)
     for palabra in config.get("palabras_de_titulo_fuera_de_perfil", []):
         if buscar_palabra(palabra, titulo):
             return f"Fuera del perfil ('{palabra}' en el título)"
@@ -163,7 +182,7 @@ def regla_fuera_de_perfil(vacante, config):
 
 def regla_idioma(vacante, config):
     """El título pide un idioma que no está en el perfil (ej. 'Dutch AI Data Rater')."""
-    titulo = (vacante.get("title") or "").lower()
+    titulo = titulo_normalizado(vacante)
     for idioma in config.get("idiomas_que_no_hablo", []):
         if buscar_palabra(idioma, titulo):
             return f"Pide un idioma que no hablo ({idioma})"
@@ -189,7 +208,7 @@ def regla_certificaciones(vacante, config):
 
 
 def regla_comision(vacante, config):
-    texto = texto_plano(vacante) + " " + (vacante.get("title") or "").lower()
+    texto = texto_plano(vacante) + " " + titulo_normalizado(vacante)
     frases = [
         r"commission[- ]only", r"commission[- ]based", r"100\s*% commission",
         r"uncapped commission", r"unlimited earning potential",
@@ -202,7 +221,7 @@ def regla_comision(vacante, config):
 
 
 def regla_titulo_sospechoso(vacante, config):
-    titulo = (vacante.get("title") or "").lower()
+    titulo = titulo_normalizado(vacante)
     if titulo.startswith("copy of"):
         return "Título 'Copy of': publicación copiada de una plantilla"
     return None
@@ -266,7 +285,32 @@ def evaluar(vacantes, config):
             descartadas.append((vacante, motivo))
         else:
             pasan.append((vacante, notas_de_aprobacion(vacante, config)))
+    pasan, repetidas = quitar_repetidas_de_la_misma_empresa(pasan)
+    descartadas.extend(repetidas)
     return pasan, descartadas
+
+
+def quitar_repetidas_de_la_misma_empresa(pasan):
+    """Una empresa que publica el mismo aviso varias veces aparece una sola vez.
+
+    Se conserva la primera y las demás pasan a descartadas con su motivo, para
+    que el informe siga siendo auditable. Solo se compara entre las que ya
+    pasaron las reglas: si el aviso era malo, ya lo tumbó otra regla.
+    Misma empresa + misma descripción = repetida. Textos muy cortos no cuentan.
+    """
+    vistas = set()
+    unicas, repetidas = [], []
+    for vacante, notas in pasan:
+        if len(texto_plano(vacante)) < 200:
+            unicas.append((vacante, notas))
+            continue
+        clave = (vacante.get("companyName"), huella_descripcion(vacante))
+        if clave in vistas:
+            repetidas.append((vacante, "Repetida: la misma empresa publicó este aviso más de una vez (se conserva una)"))
+        else:
+            vistas.add(clave)
+            unicas.append((vacante, notas))
+    return unicas, repetidas
 
 
 def notas_de_aprobacion(vacante, config):
