@@ -41,6 +41,7 @@ cd radar-vacantes
 1. Copia `perfil.ejemplo.md` como `perfil.md` y llénalo con tus datos.
 2. Copia `CLAUDE.ejemplo.md` como `CLAUDE.md`.
 3. Abre `config.json` y cambia:
+   - `hora_del_informe`: a qué hora quieres el informe diario.
    - `busquedas`: 2 o 3 cargos en inglés (ej. "accountant", "customer success").
    - `pais`: tu país en inglés (ej. "Mexico", "Peru").
    - `zona_horaria_utc`: tu diferencia con UTC (Colombia y Perú: -5; México: -6).
@@ -55,13 +56,13 @@ cd radar-vacantes
 - Para revisar todo de nuevo (por ejemplo, después de cambiar config.json):
   `python radar.py --sin-memoria`.
 
-Para que corra solo cada día a las 7:30 a. m.:
+Para que corra solo cada día:
 
-```
-schtasks /create /tn "Radar de Vacantes" /tr "C:\RUTA\radar-vacantes\ejecutar_radar.bat" /sc daily /st 07:30
-```
+1. En `config.json`, pon tu hora en `hora_del_informe` (formato 24 h, ej. "10:00" o "18:30").
+2. Doble clic en `programar.bat` (o `python programar.py`).
 
-(cambia `C:\RUTA` por la carpeta donde lo descargaste; el PC debe estar encendido).
+Si el PC está apagado a esa hora, el Radar corre apenas lo enciendas.
+Para cambiar la hora después: edita `config.json` y vuelve a abrir `programar.bat`.
 
 ## 6. Usar los agentes (opcional)
 
